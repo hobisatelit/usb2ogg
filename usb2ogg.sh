@@ -1,17 +1,15 @@
 #!/bin/bash
 # Copyright 2026 hobisatelit
-# https://github.com/hobisatelit/
+# https://github.com/hobisatelit/usb2ogg
 # License: GPL-3.0-or-later
-
 # convert iq raw sat to ogg 
-
 # exit if pipeline fails or unset variables
 set -eu
 
 # satellites list that the audio will be recorded in USB (upper side band) modulation
 # 68446 - HADES-SA 
 
-
+# default value, this value will be used when not set at station.env
 : "${USB_ENABLE:=true}"
 : "${USB_NORAD:= 68446}"
 : "${SATNOGS_OUTPUT_PATH:=/tmp/.satnogs/data}"
@@ -39,28 +37,24 @@ OGG_FILE="satnogs_${ID}_${DATE}.ogg"
 OGG_FILE_UPLOAD="satnogs_${ID}_${DATE}_MOD.ogg"
 ELAPSED=0
 
-sleep 5
-
 if [[ " $USB_NORAD " =~ .*\ ${NORAD}\ .* && "$USB_ENABLE" ]]; then
         echo "[USB2OGG] ✓ UPPER SIDE BAND (USB) Converter Start"
 		echo "[USB2OGG] INFO: $ID, Norad: $NORAD, Sat: $SATNAME, Baud: $BAUD, TLE: $TLE" 
+		
+        cd "${USB_APP_DIR}"
+        ./usb2ogg.py --freq_offset "${USB_FREQ_OFFSET}" --bandwidth "${USB_BANDWIDTH}" "${IQ_DUMP_FILENAME}"* "${SATNOGS_OUTPUT_PATH}/usb.wav"                              
+        ./sox "${SATNOGS_OUTPUT_PATH}/usb.wav" -C 10 "${SATNOGS_OUTPUT_PATH}/${OGG_FILE_UPLOAD}"
 
         cd $SATNOGS_OUTPUT_PATH
 
-        # Loop until original ogg file from satnogs_client is ready or timeout
+        # Loop until original ogg file from satnogs_client is ready or timeout. 
+        # this function to make sure the original .ogg file from satnogs_client is deleted
         while [ $ELAPSED -lt $MAX_WAIT_TIME ]; do
                 # Check if file exists and is readable
-                if [ -f "$OGG_FILE" ] && [ -r "$OGG_FILE" ]; then
-                        # Optional: Check if file size is not zero
-                        if [ -s "$OGG_FILE" ]; then
-                                echo "[USB2OGG] ✓ DELETE ORIGINAL ${OGG_FILE} .."  
-                                rm -rfv $OGG_FILE                             
-                                cd "${USB_APP_DIR}"
-                                ./usb2ogg.py --freq_offset "${USB_FREQ_OFFSET}" --bandwidth "${USB_BANDWIDTH}" "${IQ_DUMP_FILENAME}"* "${SATNOGS_OUTPUT_PATH}/usb.wav"                              
-                                ./sox "${SATNOGS_OUTPUT_PATH}/usb.wav" -C 10 "${SATNOGS_OUTPUT_PATH}/${OGG_FILE_UPLOAD}"
-
-                                exit 0
-                        fi
+                if [ -f "$OGG_FILE" ]; then
+                       echo "[USB2OGG] ✓ DELETE ORIGINAL ${OGG_FILE} .."  
+                       rm -rfv $OGG_FILE                             
+                       exit 0
                 fi
                 
                 # Sleep before next check
