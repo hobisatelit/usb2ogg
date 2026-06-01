@@ -39,32 +39,34 @@ ELAPSED=0
 
 if [[ " $USB_NORAD " =~ .*\ ${NORAD}\ .* && "$USB_ENABLE" ]]; then
         echo "[USB2OGG] ✓ UPPER SIDE BAND (USB) Converter Start"
-		echo "[USB2OGG] INFO: $ID, Norad: $NORAD, Sat: $SATNAME, Baud: $BAUD, TLE: $TLE" 
-		
+                echo "[USB2OGG] INFO: $ID, Norad: $NORAD, Sat: $SATNAME, Baud: $BAUD, TLE: $TLE"
+
+        # run usb2ogg.py in background to make sure it executed as fast as possible
         cd "${USB_APP_DIR}"
-        ./usb2ogg.py --freq_offset "${USB_FREQ_OFFSET}" --bandwidth "${USB_BANDWIDTH}" "${IQ_DUMP_FILENAME}"* "${SATNOGS_OUTPUT_PATH}/usb.wav"                              
-        ./sox "${SATNOGS_OUTPUT_PATH}/usb.wav" -C 10 "${SATNOGS_OUTPUT_PATH}/${OGG_FILE_UPLOAD}"
+        rm -rfv "${SATNOGS_OUTPUT_PATH}/usb.wav"
+        ./usb2ogg.py --freq_offset "${USB_FREQ_OFFSET}" --bandwidth "${USB_BANDWIDTH}" "${IQ_DUMP_FILENAME}"* "${SATNOGS_OUTPUT_PATH}/usb.wav"  && ./sox "${SATNOGS_OUTPUT_PATH}/usb.wav" -C 10 "${SATNOGS_OUTPUT_PATH}/${OGG_FILE_UPLOAD}" && echo "[USB2OGG] ✓ ${OGG_FILE_UPLOAD} Saved!" &
 
         cd $SATNOGS_OUTPUT_PATH
 
-        # Loop until original ogg file from satnogs_client is ready or timeout. 
+        # Loop until original ogg file from satnogs_client is ready or timeout.
         # this function to make sure the original .ogg file from satnogs_client is deleted
         while [ $ELAPSED -lt $MAX_WAIT_TIME ]; do
                 # Check if file exists and is readable
                 if [ -f "$OGG_FILE" ]; then
-                       echo "[USB2OGG] ✓ DELETE ORIGINAL ${OGG_FILE} .."  
-                       rm -rfv $OGG_FILE                             
-                       exit 0
+                       echo "[USB2OGG] ✓ DELETE ORIGINAL ${OGG_FILE} .." 
+                       rm -rfv $OGG_FILE
+                       #exit 0
+                       break
                 fi
-                
+
                 # Sleep before next check
                 sleep $CHECK_INTERVAL
                 ELAPSED=$((ELAPSED + CHECK_INTERVAL))
-                
+
                 # Optional: Print progress every 10 seconds
                 if [ $((ELAPSED % 10)) -eq 0 ]; then
                         echo "[USB2OGG] Still waiting... ($ELAPSED seconds elapsed)"
                 fi
         done
-    
+
 fi
