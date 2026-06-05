@@ -37,7 +37,7 @@ OGG_FILE="satnogs_${ID}_${DATE}.ogg"
 OGG_FILE_UPLOAD="satnogs_${ID}_${DATE}_MOD.ogg"
 ELAPSED=0
 
-if [[ " $USB_NORAD " =~ .*\ ${NORAD}\ .* && "$USB_ENABLE" ]]; then
+if [[ " $USB_NORAD " =~ .*\ ${NORAD}\ .* && ${USB_ENABLE,,} == true ]]; then
         echo "[USB2OGG] ✓ UPPER SIDE BAND (USB) Converter Start"
                 echo "[USB2OGG] INFO: $ID, Norad: $NORAD, Sat: $SATNAME, Baud: $BAUD, TLE: $TLE"
 
